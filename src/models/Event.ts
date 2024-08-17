@@ -1,6 +1,7 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 
-export interface IEvent extends Document {
+export interface IEventAttributes {
+    id?: string;
     title: string;
     description: string;
     email: string;
@@ -9,71 +10,102 @@ export interface IEvent extends Document {
     city: string;
     organizerDetails: string;
     paidStatus: boolean;
-    eventImages: mongoose.Types.ObjectId[]; // Array of Image references
     displayStatus: boolean;
-    createdBy: mongoose.Types.ObjectId;
-    likesCount: number;   // Total number of likes
-    dislikesCount: number; // Total number of dislikes
+    createdBy: string;
+    likesCount?: number;
+    dislikesCount?: number;
+    eventImages?: string[]; // Add this field to store image IDs
 }
 
-const eventSchema: Schema = new Schema({
-    title: {
-        type: String,
-        required: true,
-    },
-    description: {
-        type: String,
-        required: true,
-    },
-    email: {
-        type: String,
-        required: true,
-    },
-    phone: {
-        type: String,
-        required: true,
-    },
-    address: {
-        type: String,
-        required: true,
-    },
-    city: {
-        type: String,
-        required: true,
-    },
-    organizerDetails: {
-        type: String,
-        required: true,
-    },
-    paidStatus: {
-        type: Boolean,
-        required: true,
-    },
-    eventImages: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Image', // Reference to the Image model
-    }],
-    displayStatus: {
-        type: Boolean,
-        required: true,
-    },
-    createdBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'User', // Reference to the User model
-        required: true,
-    },
-    likesCount: {
-        type: Number,
-        default: 0,
-    },
-    dislikesCount: {
-        type: Number,
-        default: 0,
-    },
-}, {
-    timestamps: true,
-});
+interface IEventCreationAttributes extends Optional<IEventAttributes, 'id' | 'likesCount' | 'dislikesCount' | 'eventImages'> {}
 
-const Event = mongoose.model<IEvent>('Event', eventSchema);
+export class Event extends Model<IEventAttributes, IEventCreationAttributes> implements IEventAttributes {
+    public id!: string;
+    public title!: string;
+    public description!: string;
+    public email!: string;
+    public phone!: string;
+    public address!: string;
+    public city!: string;
+    public organizerDetails!: string;
+    public paidStatus!: boolean;
+    public displayStatus!: boolean;
+    public createdBy!: string;
+    public likesCount!: number;
+    public dislikesCount!: number;
+    public eventImages!: string[]; // Add this field to the model
 
-export default Event;
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+
+    static associate(models: any) {
+        Event.belongsTo(models.User, { foreignKey: 'createdBy', as: 'creator' });
+        Event.hasMany(models.Image, { foreignKey: 'eventId', as: 'images' });
+    }
+}
+
+export const initEventModel = (sequelize: Sequelize) => {
+    Event.init({
+        id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        email: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        phone: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        address: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        city: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        organizerDetails: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        paidStatus: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+        },
+        displayStatus: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+        },
+        createdBy: {
+            type: DataTypes.UUID,
+            allowNull: false,
+        },
+        likesCount: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+        dislikesCount: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+        eventImages: {
+            type: DataTypes.ARRAY(DataTypes.STRING), // Array of image IDs
+            defaultValue: [],
+        }
+    }, {
+        sequelize,
+        modelName: 'Event',
+        timestamps: true,
+    });
+};

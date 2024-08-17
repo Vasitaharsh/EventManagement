@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "prepare": "npx sequelize-cli db:create && npx sequelize-cli db:migrate",
     "prebuild": "ts-node src/createUploadFolder.ts",
     "build": "tsc",
     "start": "node dist/index.js"
@@ -12,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/sequelize": "^4.28.20",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -20,18 +22,24 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.3",
     "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.0",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.14"
+    "nodemailer": "^6.9.14",
+    "sequelize": "^6.37.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/helmet": "^4.0.0",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mongoose": "^5.11.97",
     "@types/multer": "^1.4.11",
+    "@types/node": "^22.4.0",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.15",
+    "sequelize-cli": "^6.6.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }
 }

@@ -36,8 +36,7 @@ class EventController {
 
           const createdEvent = await eventService.createEvent(files, eventData, userId);
           
-          const eventUrl = `https://localhost:5000/api/events/getById/${createdEvent._id}`;
-
+          const eventUrl = `https://localhost:5000/api/events/getById/${createdEvent.id}`;
           
           res.status(201).json({
             message: 'Event created successfully',

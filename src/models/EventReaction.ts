@@ -1,38 +1,66 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { DataTypes, Model, Sequelize } from 'sequelize';
 
-enum ReactionType {
+// Define the ReactionType enum within the model file
+export enum ReactionType {
   Like = 'like',
   Dislike = 'dislike',
 }
 
-interface IEventReaction extends Document {
-  userId: mongoose.Types.ObjectId;
-  eventId: mongoose.Types.ObjectId;
+interface IEventReactionAttributes {
+  id?: string;
+  userId: string;
+  eventId: string;
   reaction: ReactionType;
 }
 
-const eventReactionSchema: Schema = new Schema({
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  eventId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Event',
-    required: true,
-  },
-  reaction: {
-    type: String,
-    enum: Object.values(ReactionType),
-    required: true,
-  },
-}, {
-  timestamps: true,
-  unique: ['userId', 'eventId'],
-});
+interface IEventReactionCreationAttributes extends IEventReactionAttributes {}
 
-const EventReaction = mongoose.model<IEventReaction>('EventReaction', eventReactionSchema);
+export class EventReaction extends Model<IEventReactionAttributes, IEventReactionCreationAttributes> implements IEventReactionAttributes {
+  public id!: string;
+  public userId!: string;
+  public eventId!: string;
+  public reaction!: ReactionType;
 
-export default EventReaction;
-export { ReactionType };
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+export const initEventReactionModel = (sequelize: Sequelize) => {
+  EventReaction.init({
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'Users', // Name of the User table
+        key: 'id',
+      },
+    },
+    eventId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'Events', // Name of the Event table
+        key: 'id',
+      },
+    },
+    reaction: {
+      type: DataTypes.ENUM(...Object.values(ReactionType)),
+      allowNull: false,
+    },
+  }, {
+    sequelize,
+    modelName: 'EventReaction',
+    timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['userId', 'eventId'], // Ensuring uniqueness of userId and eventId combination
+      },
+    ],
+  });
+};

@@ -1,49 +1,93 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
+import bcrypt from 'bcryptjs';
 
-export interface IUser extends Document {
-  email: string;
-  password: string;
-  otp?: string;
-  otpExpires?: Date;
-  role: 'user' | 'admin';
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+interface IUserAttributes {
+    id?: string;
+    email: string;
+    password: string;
+    otp?: string;
+    otpExpires?: Date;
+    role: 'user' | 'admin';
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
 }
 
-const UserSchema: Schema = new Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  otp: {
-    type: String,
-    required: false,
-  },
-  otpExpires: {
-    type: Date,
-    required: false,
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user',  // Default role is 'user'
-  },
-  resetPasswordToken: { type: String },
-  resetPasswordExpires: { type: Date },
-});
+interface IUserCreationAttributes extends Optional<IUserAttributes, 'id' | 'otp' | 'otpExpires' | 'resetPasswordToken' | 'resetPasswordExpires'> {}
 
-UserSchema.pre<IUser>('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  const bcrypt = require('bcryptjs');
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+export class User extends Model<IUserAttributes, IUserCreationAttributes> implements IUserAttributes {
+    public id!: string;
+    public email!: string;
+    public password!: string;
+    public otp?: string;
+    public otpExpires?: Date;
+    public role!: 'user' | 'admin';
+    public resetPasswordToken?: string;
+    public resetPasswordExpires?: Date;
 
-const User = mongoose.model<IUser>('User', UserSchema);
-export default User;
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+
+    public async comparePassword(password: string): Promise<boolean> {
+        return bcrypt.compare(password, this.password);
+    }
+    public static async hashPassword(password: string): Promise<string> {
+        const salt = await bcrypt.genSalt(10);
+        return bcrypt.hash(password, salt);
+    }
+
+    static associate(models: any) {
+        User.hasMany(models.Event, { foreignKey: 'createdBy', as: 'events' });
+    }
+}
+
+export const initUserModel = (sequelize: Sequelize) => {
+    User.init({
+        id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
+        },
+        email: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        password: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        otp: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        otpExpires: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        role: {
+            type: DataTypes.ENUM('user', 'admin'),
+            defaultValue: 'user',
+            allowNull: false,
+        },
+        resetPasswordToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        resetPasswordExpires: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+    }, {
+        sequelize,
+        modelName: 'User',
+        timestamps: true,
+        hooks: {
+            beforeSave: async (user: User) => {
+                if (user.changed('password')) {
+                    const salt = await bcrypt.genSalt(10);
+                    user.password = await bcrypt.hash(user.password, salt);
+                }
+            },
+        },
+    });
+};

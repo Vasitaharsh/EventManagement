@@ -1,24 +1,40 @@
 import cron from 'node-cron';
-import ScheduledEvent from '../models/ScheduledEvent';
-import Event from '../models/Event';  
+import { Op } from 'sequelize';
+import { ScheduledEvent } from '../models/ScheduledEvent';
+import { Event } from '../models/Event';
 
-
-// Cron job to run every day at 12 PM
 cron.schedule('0 12 * * *', async () => {
   try {
     const now = new Date();
-    const scheduledEvents = await ScheduledEvent.find({ scheduledAt: { $lte: now } });
+    
+    // Find scheduled events where scheduledAt is less than or equal to the current time
+    const scheduledEvents = await ScheduledEvent.findAll({
+      where: {
+        scheduledAt: {
+          [Op.lte]: now,
+        },
+      },
+    });
 
     for (const scheduledEvent of scheduledEvents) {
-      const events = await Event.find({ _id: { $in: scheduledEvent.eventIds } });
+      // Find all events associated with the scheduled event
+      const events = await Event.findAll({
+        where: {
+          id: {
+            [Op.in]: scheduledEvent.eventIds,
+          },
+        },
+      });
 
-      if (events) {
+      if (events.length > 0) {
         for (const event of events) {
-          console.log(`Triggering event: ${event.title} scheduled by admin:`);
-         
+          console.log(`Triggering event: ${event.title} scheduled by admin: ${scheduledEvent.createdBy}`);
         }
 
-        await ScheduledEvent.findByIdAndDelete(scheduledEvent._id);
+        // Delete the scheduled event after processing
+        await ScheduledEvent.destroy({
+          where: { id: scheduledEvent.id },
+        });
       }
     }
   } catch (error) {

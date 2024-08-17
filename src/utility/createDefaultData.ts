@@ -1,21 +1,21 @@
-import User, { IUser } from '../models/User';
+// import {User, IUser } from '../models/User';
 
-export const createDefaultUser = async () => { 
+// export const createDefaultUser = async () => { 
 
-    const defaultEmail = 'vasitaharsh5@gmail.com';
-    const defaultUser = await User.findOne({ email: defaultEmail });
+//     const defaultEmail = 'vasitaharsh5@gmail.com';
+//     const defaultUser = await User.findOne({ email: defaultEmail });
 
-    if (!defaultUser) {
+//     if (!defaultUser) {
         
-        const newUser = new User({
-            email: defaultEmail,
-            password: 'hello',
-            role: 'admin'
-        });
+//         const newUser = new User({
+//             email: defaultEmail,
+//             password: 'hello',
+//             role: 'admin'
+//         });
 
-        await newUser.save();
-        console.log('Default user created:', newUser);
-    } else {
-        console.log('Default user already exists.');
-    }
-};
+//         await newUser.save();
+//         console.log('Default user created:', newUser);
+//     } else {
+//         console.log('Default user already exists.');
+//     }
+// };
